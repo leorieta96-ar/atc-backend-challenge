@@ -38,7 +38,7 @@ export const ExternalEventSchema = z.union([
     type: z.literal('court_updated'),
     clubId: z.number().int(),
     courtId: z.number().int(),
-    fields: z.array(z.enum(['attributes', 'name'])),
+  fields: z.array(z.enum(['attributes', 'name', 'openhours'])),
   }),
 ]);
 
@@ -99,8 +99,10 @@ export class EventsController {
             externalEvent.fields,
           ),
         );
-        this.alquilaClient.invalidateCourts(externalEvent.clubId);
-        this.alquilaClient.invalidateSlots();
+        if (externalEvent.fields.includes('openhours')) {
+          this.alquilaClient.invalidateCourts(externalEvent.clubId);
+          this.alquilaClient.invalidateSlots();
+        }
         break;
     }
   }
