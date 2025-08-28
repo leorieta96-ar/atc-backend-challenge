@@ -11,4 +11,12 @@ export interface AlquilaTuCanchaClient {
     courtId: number,
     date: Date,
   ): Promise<Slot[]>;
+  invalidateClubs(placeId?: string): void;
+  invalidateCourts(clubId?: number): void;
+  invalidateSlots(
+    clubId?: number,
+    courtId?: number,
+    date?: Date | string,
+  ): void;
+  clearCache(): void;
 }

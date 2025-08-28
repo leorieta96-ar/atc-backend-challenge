@@ -56,4 +56,8 @@ class FakeAlquilaTuCanchaClient implements AlquilaTuCanchaClient {
       `${clubId}_${courtId}_${moment(date).format('YYYY-MM-DD')}`
     ];
   }
+  invalidateClubs(placeId?: string): void {}
+  invalidateCourts(clubId?: number): void {}
+  invalidateSlots(clubId?: number, courtId?: number, date?: Date | string): void {}
+  clearCache(): void {}
 }

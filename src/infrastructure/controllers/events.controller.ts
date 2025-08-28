@@ -7,6 +7,9 @@ import { ClubUpdatedEvent } from '../../domain/events/club-updated.event';
 import { CourtUpdatedEvent } from '../../domain/events/court-updated.event';
 import { SlotBookedEvent } from '../../domain/events/slot-booked.event';
 import { SlotAvailableEvent } from '../../domain/events/slot-cancelled.event';
+import { Inject } from '@nestjs/common';
+import { ALQUILA_TU_CANCHA_CLIENT, AlquilaTuCanchaClient } from '../../domain/ports/aquila-tu-cancha.client';
+import * as moment from 'moment';
 
 const SlotSchema = z.object({
   price: z.number(),
@@ -43,7 +46,11 @@ export type ExternalEventDTO = z.infer<typeof ExternalEventSchema>;
 
 @Controller('events')
 export class EventsController {
-  constructor(private eventBus: EventBus) {}
+  constructor(
+    private eventBus: EventBus,
+    @Inject(ALQUILA_TU_CANCHA_CLIENT)
+    private alquilaClient: AlquilaTuCanchaClient,
+  ) {}
 
   @Post()
   @UseZodGuard('body', ExternalEventSchema)
@@ -57,6 +64,11 @@ export class EventsController {
             externalEvent.slot,
           ),
         );
+        this.alquilaClient.invalidateSlots(
+          externalEvent.clubId,
+          externalEvent.courtId,
+          moment(externalEvent.slot.datetime).format('YYYY-MM-DD'),
+        );
         break;
       case 'booking_cancelled':
         this.eventBus.publish(
@@ -66,11 +78,18 @@ export class EventsController {
             externalEvent.slot,
           ),
         );
+        this.alquilaClient.invalidateSlots(
+          externalEvent.clubId,
+          externalEvent.courtId,
+          moment(externalEvent.slot.datetime).format('YYYY-MM-DD'),
+        );
         break;
       case 'club_updated':
         this.eventBus.publish(
           new ClubUpdatedEvent(externalEvent.clubId, externalEvent.fields),
         );
+        this.alquilaClient.invalidateCourts(externalEvent.clubId);
+        this.alquilaClient.invalidateSlots();
         break;
       case 'court_updated':
         this.eventBus.publish(
@@ -80,6 +99,8 @@ export class EventsController {
             externalEvent.fields,
           ),
         );
+        this.alquilaClient.invalidateCourts(externalEvent.clubId);
+        this.alquilaClient.invalidateSlots();
         break;
     }
   }
